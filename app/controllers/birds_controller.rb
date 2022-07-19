@@ -1,4 +1,7 @@
 class BirdsController < ApplicationController
+  # We can use the rescue_from method to handle the ActiveRecord::RecordNotFound exception from all of our controller actions:
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found_response
+
 
   # GET /birds
   def index
@@ -14,46 +17,32 @@ class BirdsController < ApplicationController
 
   # GET /birds/:id
   def show
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      render json: bird
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    render json: bird
   end
 
   # PATCH /birds/:id
   def update
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      bird.update(bird_params)
-      render json: bird
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    bird.update(bird_params)
+    render json: bird
+
   end
 
   # PATCH /birds/:id/like
   def increment_likes
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      bird.update(likes: bird.likes + 1)
-      render json: bird
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    bird.update(likes: bird.likes + 1)
+    render json: bird
   end
 
   # DELETE /birds/:id
   def destroy
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      bird.destroy
-      head :no_content
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    bird.destroy
+    head :no_content
   end
+
 
   private
 
@@ -61,4 +50,14 @@ class BirdsController < ApplicationController
     params.permit(:name, :species, :likes)
   end
 
+  # Finding a bird based on the ID
+  # If we use the find method instead, we'll get an ActiveRecord::RecordNotFound exception instead of nil when the record doesn't exist. 
+  def find_bird
+    Bird.find(params[:id])
+  end
+
+  # Returning an error message with a status of :not_found if the bird doesn't exist
+  def render_not_found_response
+    render json: { error: "Bird not found" }, status: :not_found
+  end
 end
